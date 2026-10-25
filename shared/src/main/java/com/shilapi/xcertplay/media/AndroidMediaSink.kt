@@ -250,7 +250,7 @@ class AndroidMediaSink(
     private val videoReleasedListeners = ArrayList<() -> Unit>()
     // Closed decoders whose workers may still hold a codec on a surface until they exit; a surface
     // detach also waits for them.
-    private val closingVideoDecoders = ConcurrentHashMap.newKeySet<VideoDecoder>()
+    private val closingVideoDecoders: MutableSet<VideoDecoder> = ConcurrentHashMap.newKeySet()
     // How long a surface detach waits for decoders to confirm, and then for an unconfirmed one to exit
     // after it is closed. Variables so tests can shorten them.
     internal var detachTimeoutNanos = 2_000_000_000L
@@ -2015,7 +2015,8 @@ private class AudioRenderer(
             )
         }
         track = built
-        if (mappedChannel == AudioChannel.PHONE) {
+        // Routing callbacks need API 24; Android 6 calls then keep whatever route the system picks.
+        if (mappedChannel == AudioChannel.PHONE && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             val listener = AudioRouting.OnRoutingChangedListener { routing -> checkCallRoute(routing.routedDevice) }
             if (runCatching { built.addOnRoutingChangedListener(listener, Handler(Looper.getMainLooper())) }.isSuccess) {
                 routingListener = listener
@@ -2448,7 +2449,7 @@ private class AudioRenderer(
 
     private fun startPlayback(track: AudioTrack) {
         diagnosticStage = "track-play"
-        underrunsAtPlaybackStart = track.underrunCount
+        underrunsAtPlaybackStart = track.underrunCountCompat
         track.play()
         playbackStarted = true
         reportNavigationPlayback(track)
@@ -2495,7 +2496,7 @@ private class AudioRenderer(
     private fun maintainPlaybackBuffer() {
         val track = track ?: return
         if (bufferProgress.shouldRebuffer(mappedChannel == AudioChannel.MEDIA, playbackStarted,
-                track.underrunCount > underrunsAtPlaybackStart, queue.isEmpty(), track.playbackHeadPosition,
+                track.underrunCountCompat > underrunsAtPlaybackStart, queue.isEmpty(), track.playbackHeadPosition,
                 startThresholdBytes / 2L)) {
             // The hardware buffer has starved below the recovery floor. Pause without flushing
             // or discarding PCM, then use the configured start threshold again when music resumes.
@@ -2525,7 +2526,7 @@ private class AudioRenderer(
         val now = System.nanoTime()
         if (statsWindowStartNs == 0L) statsWindowStartNs = now
         if (!force && now - statsWindowStartNs < STATS_WINDOW_NS) return
-        val underruns = track?.underrunCount ?: 0
+        val underruns = track?.underrunCountCompat ?: 0
         val lastRx = lastArrivalNs.get()
         val currentTrack = track
         val playbackHeadFrames = currentTrack?.playbackHeadPosition
@@ -2627,7 +2628,9 @@ private class AudioRenderer(
         val track = track
         this.track = null
         if (track != null) {
-            routingListener?.let { listener -> runCatching { track.removeOnRoutingChangedListener(listener) } }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                routingListener?.let { listener -> runCatching { track.removeOnRoutingChangedListener(listener) } }
+            }
             routingListener = null
             try {
                 track.pause()
@@ -2667,3 +2670,7 @@ private class AudioRenderer(
         const val MAX_QUEUE_FULL_REPORTS = 5
     }
 }
+
+/** [AudioTrack.getUnderrunCount] needs API 24; Android 6 reports none. */
+private val AudioTrack.underrunCountCompat: Int
+    get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) underrunCount else 0

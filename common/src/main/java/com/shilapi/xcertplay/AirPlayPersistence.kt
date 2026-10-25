@@ -323,7 +323,10 @@ object AirPlayPersistence {
         return true
     }
 
-    fun loadWirelessEnabled(context: Context): Boolean =
+    /** Wireless CarPlay needs Android 7.0 (API 24) or later; Android 6 connects over USB only. */
+    val wirelessSupported: Boolean get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+
+    fun loadWirelessEnabled(context: Context): Boolean = wirelessSupported &&
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .getBoolean(KEY_WIRELESS_ENABLED, true)
 

@@ -50,8 +50,7 @@ object InterfaceSize {
             screenWidthDp = (base.screenWidthDp / scale).roundToInt()
             screenHeightDp = (base.screenHeightDp / scale).roundToInt()
             smallestScreenWidthDp = (base.smallestScreenWidthDp / scale).roundToInt()
-            setLocales(base.locales)
-            setLayoutDirection(base.locales[0])
+            setLocalesFrom(base)
         }
     }
 
@@ -62,8 +61,7 @@ object InterfaceSize {
      */
     internal fun contextOverride(scaled: Configuration): Configuration = Configuration().apply {
         densityDpi = scaled.densityDpi
-        setLocales(scaled.locales)
-        setLayoutDirection(scaled.locales[0])
+        setLocalesFrom(scaled)
     }
 
     /** Applies the density override for [base] to [activity]; call from attachBaseContext. */

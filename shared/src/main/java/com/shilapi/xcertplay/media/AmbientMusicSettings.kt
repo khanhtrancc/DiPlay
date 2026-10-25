@@ -1,9 +1,12 @@
 package com.shilapi.xcertplay.media
 
 import android.content.Context
+import android.os.Build
 
 object AmbientMusicSettings {
     private const val PREFS = "ambient_music"
+    /** The lamp clients use CompletableFuture, which needs API 24, so Android 6 keeps the lighting off. */
+    val platformSupported: Boolean get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
     data class Values(val enabled: Boolean = false, val music: Boolean = true,
         val colorMode: AmbientColorMode = AmbientColorMode.BEAT,
         val speed: AmbientColorSpeed = AmbientColorSpeed.STANDARD, val selectedColors: List<Int> = listOf(1), val colorCycle: Boolean = false, val color: Int = 1, val brightness: Int = 0, val area: Int = 3,
@@ -21,7 +24,7 @@ object AmbientMusicSettings {
         val color = integer("color", 1).coerceIn(1, 31)
         val palette = runCatching { p.getStringSet("selectedColors", null)?.mapNotNull { it.toIntOrNull() } }.getOrNull()
         return Values(
-            enabled = boolean("enabled", false),
+            enabled = platformSupported && boolean("enabled", false),
             music = boolean("music", true),
             colorMode = runCatching { AmbientColorMode.valueOf(text("colorMode", "BEAT")) }.getOrDefault(AmbientColorMode.BEAT),
             speed = runCatching { AmbientColorSpeed.valueOf(text("speed", "STANDARD")) }.getOrDefault(AmbientColorSpeed.STANDARD),
@@ -32,8 +35,8 @@ object AmbientMusicSettings {
             area = integer("area", 3).coerceIn(1, 3),
             colorSource = runCatching { AmbientColorSource.valueOf(text("colorSource", "SELECTED")) }.getOrDefault(AmbientColorSource.SELECTED),
                         idle = runCatching { AmbientIdleBehavior.valueOf(text("idle", "STEADY")) }.getOrDefault(AmbientIdleBehavior.STEADY),
-            carRhythm = boolean("carRhythm", false),
-            carRhythmFeed = boolean("carRhythmFeed", false),
+            carRhythm = platformSupported && boolean("carRhythm", false),
+            carRhythmFeed = platformSupported && boolean("carRhythmFeed", false),
                     )
     }
     fun save(context: Context, values: Values) {

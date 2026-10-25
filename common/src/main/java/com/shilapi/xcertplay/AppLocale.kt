@@ -98,9 +98,9 @@ object AppLocale {
     @Suppress("DEPRECATION")
     fun enforce(context: Context): Boolean {
         if (Build.VERSION.SDK_INT >= 33) return false
-        val locale = locale(preference(context)) ?: Resources.getSystem().configuration.locales[0]
+        val locale = locale(preference(context)) ?: Resources.getSystem().configuration.primaryLocale
         val resources = context.resources
-        if (resources.configuration.locales[0] == locale) return false
+        if (resources.configuration.primaryLocale == locale) return false
         val configuration = Configuration(resources.configuration).apply {
             setLocale(locale)
             setLayoutDirection(locale)

@@ -1,5 +1,6 @@
 package com.shilapi.xcertplay.update
 
+import android.os.Build
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
@@ -50,7 +51,8 @@ internal object UpdateClient {
             connection.useCaches = false
             val statusCode = connection.responseCode
             if (statusCode !in 200..299) throw IOException("Download from $url failed: $statusCode")
-            val total = connection.contentLengthLong.takeIf { it > 0 }
+            val total = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) connection.contentLengthLong
+                else connection.contentLength.toLong()).takeIf { it > 0 }
             var written = 0L
             connection.inputStream.use { input ->
                 destination.outputStream().use { output ->

@@ -1,6 +1,7 @@
 package com.shilapi.xcertplay.transport
 
 import android.annotation.SuppressLint
+import android.os.Build
 import com.shilapi.xcertplay.compat.Base64Compat
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
@@ -48,7 +49,10 @@ object LockdownTlsEngineFactory {
             }
             return context.createSSLEngine(PEER_HOST, PEER_PORT).apply {
                 useClientMode = true
-                sslParameters = sslParameters.apply { endpointIdentificationAlgorithm = null }
+                // Android has no endpoint identification by default; the setter itself needs API 24.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    sslParameters = sslParameters.apply { endpointIdentificationAlgorithm = null }
+                }
             }
         } finally {
             password.fill('\u0000')

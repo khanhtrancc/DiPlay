@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "com.shihab.diplay"
-        minSdk = 24
+        minSdk = 23
         targetSdk = 37
         versionCode = 40
         versionName = "0.2.21"
@@ -52,6 +52,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        // Backports java.util.function, CompletableFuture etc. for Android 6 (API 23).
+        isCoreLibraryDesugaringEnabled = true
     }
     buildFeatures {
         compose = true
@@ -59,6 +61,7 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
     implementation(platform(libs.androidx.compose.bom))
     implementation(project(":common"))
     implementation(project(":shared"))

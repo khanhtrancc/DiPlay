@@ -2916,7 +2916,8 @@ class CarPlayHostActivity : ComponentActivity() {
             context = this,
             checked = wirelessEnabled,
             theme = settingsOverlayTheme,
-        ) { checked ->
+        ) { requested ->
+            val checked = requested && AirPlayPersistence.wirelessSupported
             if (wirelessEnabled == checked) return@createWirelessCarPlayRow
             wirelessEnabled = checked
             hotspotStatus = HotspotStatus(state = if (wirelessEnabled) getString(R.string.hotspot_state_stopped) else getString(R.string.hotspot_state_off))
@@ -6377,7 +6378,8 @@ class CarPlayHostActivity : ComponentActivity() {
             Bitmap.Config.ARGB_8888)
         val done = java.util.concurrent.CountDownLatch(1)
         val copied = java.util.concurrent.atomic.AtomicBoolean(false)
-        val requested = runCatching {
+        // PixelCopy needs API 24; Android 6 keeps no last picture.
+        val requested = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && runCatching {
             PixelCopy.request(surfaceView, picture, { result ->
                 copied.set(result == PixelCopy.SUCCESS)
                 done.countDown()

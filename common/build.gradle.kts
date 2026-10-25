@@ -10,12 +10,14 @@ android {
     }
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 23
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        // Backports java.util.function, CompletableFuture etc. for Android 6 (API 23).
+        isCoreLibraryDesugaringEnabled = true
     }
 
     buildFeatures {
@@ -32,6 +34,7 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
     api(project(":shared"))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
